@@ -1,0 +1,14 @@
+{
+  "name": "PayRaya",
+  "description": "A modern, professional mobile banking application inspired by Livin Mandiri, featuring secure transfers, top-ups, payments, and real-time transaction history.",
+  "requestFramePermissions": [
+    "camera"
+  ],
+  "majorCapabilities": [
+    "Fintech",
+    "Banking",
+    "Dashboard",
+   "State Management",
+    "Animations"
+  ]
+} 
