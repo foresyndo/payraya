@@ -182,7 +182,7 @@ export const Dashboard: React.FC = () => {
           </div>
           <div className="grid grid-cols-4 gap-4">
             {[
-              { name: 'DANA', color: '#008FE3', logo: 'D', brand: 'dana' },
+              { name: 'DANA', color: '#008FE3', logo: <div className="flex flex-col items-center"><span className="text-[14px]">DANA</span></div>, brand: 'dana' },
               { name: 'OVO', color: '#4C2A86', logo: 'O', brand: 'ovo' },
               { name: 'LinkAja', color: '#E1251B', logo: 'L', brand: 'linkaja' },
               { name: 'GoPay', color: '#00AA13', logo: 'G', brand: 'gopay' },
@@ -196,12 +196,14 @@ export const Dashboard: React.FC = () => {
               >
                 <div 
                   style={{ backgroundColor: wallet.color }}
-                  className="w-12 h-12 rounded-2xl flex items-center justify-center text-white font-black text-xl shadow-lg shadow-blue-900/5 relative overflow-hidden group"
+                  className="w-12 h-12 rounded-2xl flex items-center justify-center text-white font-black shadow-lg shadow-blue-900/5 relative overflow-hidden group"
                 >
-                  <span className="relative z-10">{wallet.logo}</span>
+                  <div className="relative z-10 font-black tracking-tighter">
+                    {wallet.logo}
+                  </div>
                   {/* Real-logo simulation decor */}
-                  <div className="absolute inset-0 bg-gradient-to-tr from-black/20 to-transparent"></div>
-                  <div className="absolute -right-2 -top-2 w-8 h-8 bg-white/10 rounded-full blur-md"></div>
+                  <div className="absolute inset-0 bg-gradient-to-tr from-black/20 to-transparent opacity-50"></div>
+                  <div className="absolute -right-2 -top-2 w-8 h-8 bg-white/20 rounded-full blur-md"></div>
                 </div>
                 <span className="text-[10px] font-bold text-gray-500 uppercase tracking-tighter">{wallet.name}</span>
               </motion.button>

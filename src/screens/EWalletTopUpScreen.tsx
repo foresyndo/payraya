@@ -25,8 +25,8 @@ export const EWalletTopUpScreen: React.FC = () => {
   const [customAmount, setCustomAmount] = React.useState('');
   const [completedTx, setCompletedTx] = React.useState<any>(null);
 
-  const wallets: { name: WalletBrand; color: string; bg: string; logo: string }[] = [
-    { name: 'DANA', color: 'text-white', bg: 'bg-[#008FE3]', logo: 'D' },
+  const wallets: { name: WalletBrand; color: string; bg: string; logo: React.ReactNode }[] = [
+    { name: 'DANA', color: 'text-white', bg: 'bg-[#008FE3]', logo: <span className="text-sm">DANA</span> },
     { name: 'OVO', color: 'text-white', bg: 'bg-[#4C2A86]', logo: 'O' },
     { name: 'LinkAja', color: 'text-white', bg: 'bg-[#E1251B]', logo: 'L' },
     { name: 'GoPay', color: 'text-white', bg: 'bg-[#00AA13]', logo: 'G' },

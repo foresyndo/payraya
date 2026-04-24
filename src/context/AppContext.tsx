@@ -203,7 +203,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   }, [user]);
 
-  const login = async (email: string, _password: string): Promise<boolean> => {
+  const login = async (email: string, password: string): Promise<boolean> => {
     setIsLoading(true);
     await new Promise(resolve => setTimeout(resolve, 1500));
     
@@ -216,6 +216,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         .single();
       
       if (data && !error) {
+        // In a real app we'd verify password on server
         setUser(data);
         setCurrentScreen('home');
         setIsLoading(false);
@@ -224,22 +225,30 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
 
     // Fallback to local storage users
-    const existingUser = registeredUsers.find(u => u.email === email || u.phone === email);
+    const existingUser = registeredUsers.find(u => (u.email === email || u.phone === email));
 
     if (existingUser) {
+      // Validate password if it exists
+      if (existingUser.password && existingUser.password !== password) {
+        setIsLoading(false);
+        alert('Kata sandi salah.');
+        return false;
+      }
+      
       setUser(existingUser);
       setCurrentScreen('home');
       setIsLoading(false);
       return true;
     }
 
-    // Default demo user if no users are registered yet
-    if (registeredUsers.length === 0) {
+    // Default demo user if no users are registered yet and it matches standard demo credentials
+    if (registeredUsers.length === 0 && (email === 'user@payraya.com' || email === '081234567890')) {
       const defaultUser: User = {
         id: 'u1',
         name: 'User Handal',
-        email: email || 'user@payraya.com',
+        email: 'user@payraya.com',
         phone: '081234567890',
+        password: 'password123',
         balance: 10500000,
         pin: '123456'
       };
@@ -255,15 +264,24 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     return false;
   };
 
-  const register = async (name: string, email: string, phone: string, _password: string, pin: string): Promise<boolean> => {
+  const register = async (name: string, email: string, phone: string, password: string, pin: string): Promise<boolean> => {
     setIsLoading(true);
     await new Promise(resolve => setTimeout(resolve, 2000));
+
+    // Check if user already exists
+    const userExists = registeredUsers.some(u => u.email === email || u.phone === phone);
+    if (userExists) {
+      setIsLoading(false);
+      alert('Email atau Nomor Handphone sudah terdaftar.');
+      return false;
+    }
 
     const newUser: User = {
       id: Math.random().toString(36).substr(2, 9),
       name,
       email,
       phone,
+      password,
       balance: 1000000, // Initial bonus
       pin
     };
