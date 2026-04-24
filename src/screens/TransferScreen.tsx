@@ -11,12 +11,14 @@ import { Transaction } from '../types';
 type TransferMethod = 'payraya' | 'bank' | 'bifast';
 
 const BANKS = [
-  { id: 'bca', name: 'BCA', code: '014' },
-  { id: 'mandiri', name: 'Mandiri', code: '008' },
-  { id: 'bni', name: 'BNI', code: '009' },
-  { id: 'bri', name: 'BRI', code: '002' },
-  { id: 'cimb', name: 'CIMB Niaga', code: '022' },
-  { id: 'permata', name: 'Permata Bank', code: '013' },
+  { id: 'bca', name: 'BCA', code: '014', color: '#0060AF', initials: 'BCA' },
+  { id: 'mandiri', name: 'Mandiri', code: '008', color: '#003A8F', initials: 'mandiri' },
+  { id: 'bni', name: 'BNI', code: '009', color: '#FF6600', initials: 'BNI' },
+  { id: 'bri', name: 'BRI', code: '002', color: '#00529C', initials: 'BRI' },
+  { id: 'cimb', name: 'CIMB Niaga', code: '022', color: '#E31E24', initials: 'CIMB' },
+  { id: 'permata', name: 'Permata Bank', code: '013', color: '#88B04B', initials: 'Permata' },
+  { id: 'danamon', name: 'Danamon', code: '011', color: '#F37021', initials: 'Danamon' },
+  { id: 'btpn', name: 'BTPN / Jenius', code: '213', color: '#00AEEF', initials: 'Jenius' },
 ];
 
 export const TransferScreen: React.FC = () => {
@@ -158,16 +160,18 @@ export const TransferScreen: React.FC = () => {
                     setStep('bank_select');
                   }
                 }}
-                className="bg-white p-5 rounded-2xl shadow-sm border border-[#f0f0f0] flex items-center gap-4 text-left active:scale-[0.98] transition-all"
+                className="group bg-white p-5 rounded-[24px] shadow-sm border-2 border-transparent hover:border-blue-100 hover:shadow-md flex items-center gap-4 text-left active:scale-[0.98] transition-all"
               >
-                <div className={`w-12 h-12 ${m.color} rounded-xl flex items-center justify-center shrink-0`}>
-                  <m.icon size={24} />
+                <div className={`w-14 h-14 ${m.color} rounded-2xl flex items-center justify-center shrink-0 shadow-sm group-hover:scale-110 transition-transform`}>
+                  <m.icon size={28} strokeWidth={2.5} />
                 </div>
                 <div className="flex-1">
-                  <h4 className="font-bold text-gray-800">{m.title}</h4>
-                  <p className="text-xs text-gray-400 mt-0.5">{m.desc}</p>
+                  <h4 className="font-black text-[15px] text-gray-800 tracking-tight">{m.title}</h4>
+                  <p className="text-[11px] text-gray-400 font-bold uppercase tracking-wide mt-0.5">{m.desc}</p>
                 </div>
-                <ChevronRight size={20} className="text-gray-300" />
+                <div className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center group-hover:bg-[#003A8F] group-hover:text-white transition-colors">
+                  <ChevronRight size={20} className="transition-transform group-hover:translate-x-0.5" />
+                </div>
               </button>
             ))}
 
@@ -248,15 +252,24 @@ export const TransferScreen: React.FC = () => {
                        setStep('input');
                        setBankSearch('');
                      }}
-                     className="bg-white p-5 rounded-2xl shadow-sm border border-[#f0f0f0] flex items-center justify-between active:scale-[0.99] transition-all"
+                     className="bg-white p-5 rounded-[24px] shadow-sm border-2 border-transparent hover:border-blue-100 hover:shadow-md flex items-center justify-between active:scale-[0.99] transition-all group overflow-hidden"
                    >
                      <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 bg-gray-50 rounded-lg flex items-center justify-center font-black text-[#003A8F] text-xs">
-                           {bank.name.substring(0, 3)}
+                        <div 
+                          style={{ backgroundColor: bank.color }}
+                          className="w-12 h-12 rounded-[14px] flex items-center justify-center font-black text-white text-[11px] shadow-sm italic tracking-tighter group-hover:scale-110 transition-transform"
+                        >
+                           {bank.initials}
                         </div>
-                        <span className="font-bold text-gray-700">{bank.name}</span>
+                        <div className="flex flex-col">
+                          <span className="font-black text-gray-800 tracking-tight">{bank.name}</span>
+                          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">Bank Tujuan</span>
+                        </div>
                      </div>
-                     <span className="text-[10px] font-bold text-gray-300">KODE: {bank.code}</span>
+                     <div className="flex flex-col items-end">
+                       <ChevronRight size={18} className="text-gray-300 group-hover:text-[#003A8F] group-hover:translate-x-1 transition-all" />
+                       <span className="text-[9px] font-black text-gray-300 mt-1 uppercase tracking-tighter">KODE: {bank.code}</span>
+                     </div>
                    </button>
                  ))}
                  {BANKS.filter(bank => 
@@ -281,8 +294,11 @@ export const TransferScreen: React.FC = () => {
             <Card>
                {selectedBank && (
                  <div className="flex items-center gap-3 mb-6 p-3 bg-blue-50 rounded-xl border border-blue-100">
-                    <div className="w-8 h-8 bg-white rounded flex items-center justify-center font-bold text-[#003A8F] text-[10px]">
-                      {selectedBank.name.substring(0, 3)}
+                    <div 
+                      style={{ backgroundColor: selectedBank.color }}
+                      className="w-8 h-8 rounded flex items-center justify-center font-bold text-white text-[8px] italic"
+                    >
+                      {selectedBank.initials}
                     </div>
                     <span className="text-sm font-bold text-[#003A8F]">Bank {selectedBank.name}</span>
                  </div>
@@ -534,3 +550,4 @@ export const TransferScreen: React.FC = () => {
     </div>
   );
 };
+
