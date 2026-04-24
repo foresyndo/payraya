@@ -10,9 +10,11 @@ import { Transaction } from '../types';
 import Barcode1D from 'react-barcode';
 
 export const TopUpScreen: React.FC = () => {
-  const { user, setScreen, addTransaction } = useApp();
-  const [step, setStep] = useState<'method' | 'selection' | 'agent-token' | 'va-code' | 'success'>('method');
-  const [method, setMethod] = useState<'va' | 'mitra' | 'agen'>('va');
+  const { user, setScreen, addTransaction, selectedEWallet, setSelectedEWallet } = useApp();
+  const [step, setStep] = useState<'method' | 'selection' | 'wallet-form' | 'agent-token' | 'va-code' | 'success'>('method');
+  const [method, setMethod] = useState<'va' | 'mitra' | 'agen' | 'ewallet'>('va');
+  const [selectedWallet, setSelectedWallet] = useState<{name: string, color: string, icon: any} | null>(null);
+  const [walletPhone, setWalletPhone] = useState('');
   const [selectedAmount, setSelectedAmount] = useState<number | null>(null);
   const [customAmount, setCustomAmount] = useState<string>('');
   const [copied, setCopied] = useState(false);
@@ -29,11 +31,45 @@ export const TopUpScreen: React.FC = () => {
 
   const amounts = [50000, 100000, 250000, 500000, 1000000, 2000000];
   const banks = [
-    { name: 'BCA', code: '8801' },
-    { name: 'Mandiri', code: '9012' },
-    { name: 'BNI', code: '4452' },
-    { name: 'BRI', code: '1002' }
+    { name: 'BCA', code: '8801', color: 'bg-[#0060AF]' },
+    { name: 'Mandiri', code: '9012', color: 'bg-[#FDB813]' },
+    { name: 'BNI', code: '4452', color: 'bg-[#FF6600]' },
+    { name: 'BRI', code: '1002', color: 'bg-[#00529C]' },
+    { name: 'Permata', code: '7001', color: 'bg-[#D10000]' },
+    { name: 'CIMB', code: '8059', color: 'bg-[#E31E24]' }
   ];
+
+  const retailOptions = [
+    { name: 'Indomaret', desc: 'Min. Rp 50.000', color: 'bg-[#E31E24]' },
+    { name: 'Alfamart', desc: 'Min. Rp 50.000', color: 'bg-[#00529C]' },
+    { name: 'Mitra PayRaya', desc: 'Min. Rp 10.000', color: 'bg-[#003A8F]' }
+  ];
+
+  const walletOptions = [
+    { name: 'DANA', color: 'bg-[#008FE3]', icon: 'D' },
+    { name: 'OVO', color: 'bg-[#4C2A86]', icon: 'O' },
+    { name: 'GoPay', color: 'bg-[#00AED6]', icon: 'G' },
+    { name: 'LinkAja', color: 'bg-[#E1251B]', icon: 'L' }
+  ];
+
+  const agentOptions = [
+    { name: 'Agen Perorangan', desc: 'Top up lewat tetangga atau Kenalan', color: 'bg-green-600' },
+    { name: 'Scan QR Agen', desc: 'Scan kode QR milik agen', color: 'bg-blue-600' }
+  ];
+
+  const [selectedRetail, setSelectedRetail] = useState<{name: string, desc: string} | null>(null);
+  const [selectedAgent, setSelectedAgent] = useState<{name: string, desc: string} | null>(null);
+
+  useEffect(() => {
+    if (selectedEWallet) {
+      const wallet = walletOptions.find(w => w.name === selectedEWallet);
+      if (wallet) {
+        setMethod('ewallet');
+        setSelectedWallet(wallet);
+        setStep('selection');
+      }
+    }
+  }, [selectedEWallet]);
 
   useEffect(() => {
     let interval: any;
@@ -53,7 +89,14 @@ export const TopUpScreen: React.FC = () => {
     const amount = selectedAmount || parseInt(customAmount);
     if (!amount || amount < 10000) return;
 
+    if (method === 'ewallet') {
+      if (!selectedWallet) return;
+      setStep('wallet-form');
+      return;
+    }
+
     if (method === 'mitra' || method === 'agen') {
+      if ((method === 'mitra' && !selectedRetail) || (method === 'agen' && !selectedAgent)) return;
       const newToken = Math.floor(1000000000 + Math.random() * 9000000000).toString();
       setToken(newToken);
       setStep('agent-token');
@@ -71,17 +114,29 @@ export const TopUpScreen: React.FC = () => {
     }
   };
 
-  const confirmTopUp = async (source: 'va' | 'agent') => {
+  const confirmTopUp = async (source: 'va' | 'agent' | 'ewallet') => {
     const amount = selectedAmount || parseInt(customAmount);
     if (!amount) return;
     
-    const title = source === 'va' 
-      ? `Top Up Saldo via VA ${selectedBank?.name}` 
-      : `Top Up Saldo via ${method === 'mitra' ? 'Mitra/Indomaret' : 'Agen Perorangan'}`;
-      
-    const bankName = source === 'va' 
-      ? `Virtual Account ${selectedBank?.name}` 
-      : (method === 'mitra' ? 'Mitra PayRaya' : 'Agen Individual');
+    let title = '';
+    let bankName = '';
+    let recipientName = user?.name || 'User Handal';
+    let senderName = '';
+
+    if (source === 'va') {
+      title = `Top Up Saldo via VA ${selectedBank?.name}`;
+      bankName = `Virtual Account ${selectedBank?.name}`;
+      senderName = 'Bank Transfer';
+    } else if (source === 'ewallet') {
+      title = `Top Up Wallet ${selectedWallet?.name}`;
+      bankName = `${selectedWallet?.name} Top Up`;
+      recipientName = `E-Wallet: ${walletPhone}`;
+      senderName = 'PayRaya Balance';
+    } else {
+      title = `Top Up Saldo via ${method === 'mitra' ? selectedRetail?.name : selectedAgent?.name}`;
+      bankName = (method === 'mitra' ? selectedRetail?.name : selectedAgent?.name) || 'Mitra PayRaya';
+      senderName = method === 'mitra' ? (selectedRetail?.name || 'Mitra') : (selectedAgent?.name || 'Agen');
+    }
 
     const tx = await addTransaction({
       type: 'topup',
@@ -89,9 +144,9 @@ export const TopUpScreen: React.FC = () => {
       title: title,
       category: 'Top Up',
       bankName: bankName,
-      accountNumber: token,
-      recipientName: user?.name || 'User Handal',
-      senderName: source === 'va' ? 'Bank Transfer' : 'Mitra Pembayaran',
+      accountNumber: source === 'ewallet' ? walletPhone : token,
+      recipientName: recipientName,
+      senderName: senderName,
       status: 'success'
     });
     setCompletedTransaction(tx);
@@ -108,15 +163,22 @@ export const TopUpScreen: React.FC = () => {
     <div className="pb-24 pt-6 px-5 flex flex-col min-h-screen bg-[#F5F7FA]">
       <div className="flex items-center gap-4 mb-8">
         <button onClick={() => {
-          if (step === 'method') setScreen('home');
+          if (step === 'method') {
+            setSelectedEWallet(null);
+            setScreen('home');
+          }
           else if (step === 'selection') setStep('method');
+          else if (step === 'wallet-form') setStep('selection');
           else if (step === 'agent-token' || step === 'va-code') setStep('selection');
-          else setScreen('home');
+          else {
+            setSelectedEWallet(null);
+            setScreen('home');
+          }
         }} className="p-2 bg-white rounded-lg shadow-sm">
           <ArrowLeft size={20} className="text-[#003A8F]" />
         </button>
         <h1 className="text-xl font-bold text-[#003A8F]">
-          {step === 'method' ? 'Metode Top Up' : (step === 'selection' ? 'Isi Saldo' : (step === 'va-code' ? 'Kode VA' : 'Konfirmasi Agen'))}
+          {step === 'method' ? 'Metode Top Up' : (step === 'selection' ? 'Isi Saldo' : (step === 'wallet-form' ? 'Detail Wallet' : (step === 'va-code' ? 'Kode VA' : 'Konfirmasi Agen')))}
         </h1>
       </div>
 
@@ -161,6 +223,20 @@ export const TopUpScreen: React.FC = () => {
 
               <Card 
                 className="flex items-center gap-4 p-5 cursor-pointer hover:border-[#003A8F] transition-all"
+                onClick={() => { setMethod('ewallet'); setStep('selection'); }}
+              >
+                <div className="w-12 h-12 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center">
+                  <Barcode size={24} />
+                </div>
+                <div className="flex-1">
+                  <h4 className="font-black text-gray-800">E-Wallet</h4>
+                  <p className="text-[10px] text-gray-400 font-bold uppercase mt-0.5">Top up DANA, OVO, GoPay, LinkAja</p>
+                </div>
+                <ChevronRight size={18} className="text-gray-300" />
+              </Card>
+
+              <Card 
+                className="flex items-center gap-4 p-5 cursor-pointer hover:border-[#003A8F] transition-all"
                 onClick={() => { setMethod('agen'); setStep('selection'); }}
               >
                 <div className="w-12 h-12 bg-green-50 text-green-600 rounded-2xl flex items-center justify-center">
@@ -194,51 +270,89 @@ export const TopUpScreen: React.FC = () => {
                   Ubah
                 </button>
               </div>
-              {method === 'va' ? (
+
+              {method === 'va' && (
                 <div className="space-y-4">
-                  <div className="grid grid-cols-4 gap-3">
+                  <div className="grid grid-cols-3 gap-3">
                     {banks.map(bank => (
                       <button
                         key={bank.name}
                         onClick={() => setSelectedBank(bank)}
-                        className={`p-3 rounded-xl border-2 transition-all flex flex-col items-center gap-1 ${selectedBank?.name === bank.name ? 'border-[#003A8F] bg-blue-50 text-[#003A8F]' : 'border-gray-50 bg-white text-gray-400'}`}
+                        className={`p-3 rounded-xl border-2 transition-all flex flex-col items-center gap-2 ${selectedBank?.name === bank.name ? 'border-[#003A8F] bg-blue-50' : 'border-gray-50 bg-white'}`}
                       >
-                        <Landmark size={20} />
-                        <span className="text-[10px] font-black">{bank.name}</span>
+                        <div 
+                          className={`w-10 h-10 ${bank.color} rounded-lg flex items-center justify-center text-white font-black text-[10px] italic tracking-tighter`}
+                        >
+                           {bank.name.substring(0, 3)}
+                        </div>
+                        <span className={`text-[10px] font-bold ${selectedBank?.name === bank.name ? 'text-[#003A8F]' : 'text-gray-500'}`}>{bank.name}</span>
                       </button>
                     ))}
                   </div>
-                  {selectedBank && (
-                    <Card className="bg-gradient-to-br from-[#003A8F] to-blue-700 text-white border-none p-5 relative overflow-hidden group">
-                        <div className="relative z-10">
-                          <div className="flex items-center gap-3">
-                            <Landmark size={20} className="text-blue-200" />
-                            <span className="text-blue-100 text-[10px] font-bold uppercase tracking-widest leading-none">Pilihan: Virtual Account {selectedBank.name}</span>
-                          </div>
-                          <div className="flex justify-between items-center mt-3">
-                             <h2 className="text-xl font-black tracking-wider">{selectedBank.code}{user?.phone?.slice(-8).replace(/\d{4}$/, '****')}</h2>
-                          </div>
-                        </div>
-                        <div className="absolute -right-4 -bottom-4 w-20 h-20 bg-white/5 rounded-full blur-xl group-hover:scale-150 transition-transform duration-700"></div>
-                    </Card>
-                  )}
                 </div>
-              ) : (
-                <Card 
-                  className="bg-white border-blue-50 p-4 flex items-center gap-4 cursor-pointer hover:border-[#003A8F] transition-all group shadow-sm"
-                  onClick={() => setStep('method')}
-                >
-                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${method === 'mitra' ? 'bg-amber-50 text-amber-600' : 'bg-green-50 text-green-600'}`}>
-                    {method === 'mitra' ? <Store size={22} /> : <Users size={22} />}
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-[13px] font-black text-gray-800">
-                      {method === 'mitra' ? 'Mitra & Indomaret' : 'Agen Perorangan'}
-                    </h3>
-                    <p className="text-[9px] text-gray-400 font-bold uppercase mt-0.5 tracking-tight">Klik untuk ganti metode pembayaran</p>
-                  </div>
-                  <ChevronRight size={16} className="text-gray-300 group-hover:translate-x-1 transition-transform" />
-                </Card>
+              )}
+
+              {method === 'ewallet' && (
+                <div className="grid grid-cols-2 gap-3">
+                  {walletOptions.map(wallet => (
+                    <button
+                      key={wallet.name}
+                      onClick={() => setSelectedWallet(wallet)}
+                      className={`p-4 rounded-xl border-2 transition-all flex items-center gap-3 ${selectedWallet?.name === wallet.name ? 'border-[#003A8F] bg-blue-50' : 'border-gray-50 bg-white shadow-sm'}`}
+                    >
+                      <div className={`w-8 h-8 ${wallet.color} rounded-lg flex items-center justify-center text-white font-black text-xs italic`}>
+                        {wallet.icon}
+                      </div>
+                      <span className={`${selectedWallet?.name === wallet.name ? 'text-[#003A8F]' : 'text-gray-800'} text-xs font-black uppercase tracking-tight`}>{wallet.name}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {method === 'mitra' && (
+                <div className="grid grid-cols-1 gap-3">
+                  {retailOptions.map(option => (
+                    <button
+                      key={option.name}
+                      onClick={() => setSelectedRetail(option)}
+                      className={`p-4 rounded-xl border-2 transition-all flex items-center justify-between gap-3 ${selectedRetail?.name === option.name ? 'border-[#003A8F] bg-blue-50' : 'border-gray-50 bg-white'}`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`w-8 h-8 ${option.color} rounded-lg flex items-center justify-center text-white`}>
+                          <Store size={16} />
+                        </div>
+                        <div className="text-left">
+                          <span className={`${selectedRetail?.name === option.name ? 'text-[#003A8F]' : 'text-gray-800'} text-xs font-black`}>{option.name}</span>
+                          <p className="text-[9px] text-gray-400 font-bold uppercase">{option.desc}</p>
+                        </div>
+                      </div>
+                      {selectedRetail?.name === option.name && <CheckCircle2 size={16} className="text-[#003A8F]" />}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {method === 'agen' && (
+                <div className="grid grid-cols-1 gap-3">
+                  {agentOptions.map(option => (
+                    <button
+                      key={option.name}
+                      onClick={() => setSelectedAgent(option)}
+                      className={`p-4 rounded-xl border-2 transition-all flex items-center justify-between gap-3 ${selectedAgent?.name === option.name ? 'border-[#003A8F] bg-blue-50' : 'border-gray-50 bg-white'}`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`w-8 h-8 ${option.color} rounded-lg flex items-center justify-center text-white`}>
+                          <Users size={16} />
+                        </div>
+                        <div className="text-left">
+                          <span className={`${selectedAgent?.name === option.name ? 'text-[#003A8F]' : 'text-gray-800'} text-xs font-black`}>{option.name}</span>
+                          <p className="text-[9px] text-gray-400 font-bold uppercase">{option.desc}</p>
+                        </div>
+                      </div>
+                      {selectedAgent?.name === option.name && <CheckCircle2 size={16} className="text-[#003A8F]" />}
+                    </button>
+                  ))}
+                </div>
               )}
             </div>
 
@@ -300,14 +414,63 @@ export const TopUpScreen: React.FC = () => {
                <Button 
                 size="full" 
                 onClick={handleTopUp} 
-                disabled={!(selectedAmount || parseInt(customAmount) >= 10000) || (method === 'va' && !selectedBank)}
+                disabled={
+                  !(selectedAmount || parseInt(customAmount) >= 10000) || 
+                  (method === 'va' && !selectedBank) ||
+                  (method === 'ewallet' && !selectedWallet) ||
+                  (method === 'mitra' && !selectedRetail) ||
+                  (method === 'agen' && !selectedAgent)
+                }
                 className="mt-6"
               >
-                 {method === 'va' ? 'Dapatkan Nomor VA' : (method === 'mitra' || method === 'agen' ? 'Dapatkan Token Agen' : 'Top Up Sekarang')}
+                 {method === 'va' ? 'Dapatkan Nomor VA' : (method === 'ewallet' ? 'Lanjutkan' : 'Dapatkan Kode Pembayaran')}
               </Button>
               {parseInt(customAmount) > 0 && parseInt(customAmount) < 10000 && (
                 <p className="text-center text-[10px] font-bold text-red-500 mt-2">Minimal top up Rp 10.000</p>
               )}
+          </motion.div>
+        )}
+
+        {step === 'wallet-form' && (
+          <motion.div
+            key="wallet-form"
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: -20, opacity: 0 }}
+            className="flex flex-col gap-6"
+          >
+             <Card className="p-6">
+                <div className="flex items-center gap-4 mb-6">
+                   <div className={`w-12 h-12 ${selectedWallet?.color} rounded-2xl flex items-center justify-center text-white font-black text-xl italic`}>
+                      {selectedWallet?.icon}
+                   </div>
+                   <div>
+                      <h3 className="font-black text-gray-800 uppercase tracking-tight">{selectedWallet?.name} Top Up</h3>
+                      <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Nominal: {formatRupiah(selectedAmount || parseInt(customAmount))}</p>
+                   </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Nomor HP Terdaftar</label>
+                    <input 
+                      type="tel"
+                      placeholder="08xxxxxxxxxx"
+                      value={walletPhone}
+                      onChange={(e) => setWalletPhone(e.target.value.replace(/[^0-9]/g, ''))}
+                      className="w-full bg-gray-50 border-none rounded-2xl py-4 px-6 text-sm font-bold text-gray-800 focus:ring-2 focus:ring-blue-100 outline-none"
+                    />
+                  </div>
+                </div>
+             </Card>
+
+             <Button 
+               size="full" 
+               onClick={() => confirmTopUp('ewallet')}
+               disabled={walletPhone.length < 10}
+             >
+                Top Up Sekarang
+             </Button>
           </motion.div>
         )}
 
@@ -459,7 +622,10 @@ export const TopUpScreen: React.FC = () => {
               </div>
 
               <div className="flex flex-col gap-3 w-full mt-4">
-                 <Button size="full" onClick={() => setScreen('home')}>Kembali ke Beranda</Button>
+                 <Button size="full" onClick={() => {
+                   setSelectedEWallet(null);
+                   setScreen('home');
+                 }}>Kembali ke Beranda</Button>
                  <Button size="full" variant="outline" onClick={() => setStep('selection')}>Isi Saldo Lagi</Button>
               </div>
            </motion.div>
