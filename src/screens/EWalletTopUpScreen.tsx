@@ -17,13 +17,22 @@ import confetti from 'canvas-confetti';
 type WalletBrand = 'DANA' | 'OVO' | 'LinkAja' | 'GoPay';
 
 export const EWalletTopUpScreen: React.FC = () => {
-  const { user, setScreen, addTransaction } = useApp();
+  const { user, setScreen, addTransaction, selectedEWallet, setSelectedEWallet, showToast } = useApp();
   const [step, setStep] = React.useState<'selection' | 'details' | 'confirm' | 'success'>('selection');
   const [selectedWallet, setSelectedWallet] = React.useState<WalletBrand | null>(null);
   const [phoneNumber, setPhoneNumber] = React.useState(user?.phone || '');
   const [amount, setAmount] = React.useState<number | null>(null);
   const [customAmount, setCustomAmount] = React.useState('');
   const [completedTx, setCompletedTx] = React.useState<any>(null);
+
+  React.useEffect(() => {
+    if (selectedEWallet) {
+      if (['DANA', 'OVO', 'LinkAja', 'GoPay'].includes(selectedEWallet)) {
+        setSelectedWallet(selectedEWallet as WalletBrand);
+        setStep('details');
+      }
+    }
+  }, [selectedEWallet]);
 
   const wallets: { name: WalletBrand; color: string; bg: string; logo: React.ReactNode }[] = [
     { name: 'DANA', color: 'text-white', bg: 'bg-[#008FE3]', logo: <span className="text-sm">DANA</span> },
@@ -44,7 +53,10 @@ export const EWalletTopUpScreen: React.FC = () => {
     if (!finalAmount || !selectedWallet || !phoneNumber) return;
 
     if (user && user.balance < finalAmount) {
-      alert('Saldo tidak mencukupi!');
+      showToast({
+        message: 'Saldo tidak mencukupi untuk top up!',
+        type: 'error'
+      });
       return;
     }
 
@@ -76,10 +88,16 @@ export const EWalletTopUpScreen: React.FC = () => {
       <div className="flex items-center gap-4 mb-8">
         <button 
           onClick={() => {
-            if (step === 'selection') setScreen('home');
+            if (step === 'selection') {
+              setSelectedEWallet(null);
+              setScreen('home');
+            }
             else if (step === 'details') setStep('selection');
             else if (step === 'confirm') setStep('details');
-            else setScreen('home');
+            else {
+              setSelectedEWallet(null);
+              setScreen('home');
+            }
           }} 
           className="p-2 bg-white rounded-lg shadow-sm border border-[#f0f0f0]"
         >
@@ -269,7 +287,10 @@ export const EWalletTopUpScreen: React.FC = () => {
             </Card>
 
             <div className="w-full space-y-3">
-              <Button size="full" onClick={() => setScreen('home')}>Kembali ke Beranda</Button>
+              <Button size="full" onClick={() => {
+                setSelectedEWallet(null);
+                setScreen('home');
+              }}>Kembali ke Beranda</Button>
               <Button size="full" variant="outline" className="flex items-center justify-center gap-2">
                 <Copy size={16} /> Simpan Bukti
               </Button>
@@ -280,3 +301,4 @@ export const EWalletTopUpScreen: React.FC = () => {
     </div>
   );
 };
+
