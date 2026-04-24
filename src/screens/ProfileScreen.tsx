@@ -20,7 +20,11 @@ import {
   Heart,
   Fingerprint,
   ArrowLeft,
-  QrCode
+  QrCode,
+  Palette,
+  Layout,
+  Layers,
+  Sparkles
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { Card } from '../components/UI';
@@ -52,6 +56,8 @@ export const ProfileScreen: React.FC = () => {
       setMode('personal_info');
     } else if (item.label === 'Ubah PIN & Password' || item.label === 'Layanan Keamanan') {
       setMode('security');
+    } else if (item.label === 'Personalisasi') {
+      setMode('preferences');
     } else {
       alert(`${item.label} akan segera hadir!`);
     }
@@ -139,7 +145,7 @@ export const ProfileScreen: React.FC = () => {
           { icon: Shield, label: 'Password', sub: 'Terakhir diubah 2 bulan lalu', color: 'bg-indigo-50 text-indigo-600' },
           { icon: Smartphone, label: 'Perangkat Terdaftar', sub: '1 Perangkat Aktif (iPhone 15 Pro)', color: 'bg-cyan-50 text-cyan-600' },
           { icon: Fingerprint, label: 'Biometrik', sub: 'Fingerprint & Face ID Aktif', color: 'bg-pink-50 text-pink-600' },
-        ].map((item, idx) => (
+        ].map((item) => (
           <Card key={item.label} className="flex items-center gap-4 py-4 px-5 active:scale-[0.98] transition-all cursor-pointer group">
             <div className={`w-11 h-11 ${item.color} rounded-[14px] flex items-center justify-center`}>
               <item.icon size={22} />
@@ -154,6 +160,93 @@ export const ProfileScreen: React.FC = () => {
       </div>
     </motion.div>
   );
+
+  const PreferencesView = () => {
+    const { themeColor, setThemeColor } = useApp();
+    const colors = [
+      { name: 'PayRaya Blue', value: '#003A8F' },
+      { name: 'Midnight', value: '#0F172A' },
+      { name: 'Emerald', value: '#059669' },
+      { name: 'Royal Purple', value: '#6D28D9' },
+      { name: 'Rose', value: '#E11D48' },
+      { name: 'Amber', value: '#D97706' },
+    ];
+
+    return (
+      <motion.div
+        initial={{ opacity: 0, x: 50 }}
+        animate={{ opacity: 1, x: 0 }}
+        exit={{ opacity: 0, x: -50 }}
+        className="px-5 py-6"
+      >
+        <div className="flex items-center gap-4 mb-8">
+          <button 
+            onClick={() => setMode('menu')}
+            className="p-2 bg-white rounded-lg shadow-sm border border-gray-100"
+          >
+            <ArrowLeft size={20} className="text-[#003A8F]" />
+          </button>
+          <h1 className="text-xl font-bold text-[#003A8F]">Personalisasi</h1>
+        </div>
+
+        <div className="space-y-8">
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center gap-2 px-1">
+              <Palette size={18} className="text-gray-400" />
+              <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest">Warna Aksen</h3>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              {colors.map((color) => (
+                <button
+                  key={color.value}
+                  onClick={() => setThemeColor(color.value)}
+                  className={`p-4 rounded-2xl border-2 transition-all flex flex-col items-center gap-2 ${themeColor === color.value ? 'border-[#003A8F] bg-blue-50' : 'border-white bg-white shadow-sm'}`}
+                >
+                  <div 
+                    style={{ backgroundColor: color.value }}
+                    className="w-10 h-10 rounded-full shadow-inner"
+                  ></div>
+                  <span className={`text-[10px] font-bold ${themeColor === color.value ? 'text-[#003A8F]' : 'text-gray-500'}`}>
+                    {color.name}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center gap-2 px-1">
+              <Layout size={18} className="text-gray-400" />
+              <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest">Gaya Visual</h3>
+            </div>
+            <div className="space-y-3">
+               {[
+                 { id: 'modern', title: 'Modern Clean', sub: 'Sudut membulat & bayangan lembut', icon: Sparkles },
+                 { id: 'glass', title: 'Glassmorphism', sub: 'Efek transparansi & blur', icon: Layers },
+               ].map((style) => (
+                 <Card key={style.id} className="flex items-center gap-4 p-4 opacity-50 cursor-not-allowed">
+                    <div className="w-10 h-10 bg-gray-50 rounded-xl flex items-center justify-center text-gray-400">
+                       <style.icon size={20} />
+                    </div>
+                    <div className="flex-1">
+                       <h4 className="text-sm font-bold text-gray-800">{style.title}</h4>
+                       <p className="text-[10px] text-gray-400 font-medium">{style.sub}</p>
+                    </div>
+                    <div className="text-[9px] font-black text-[#003A8F] uppercase bg-blue-50 px-2 py-1 rounded-md">Soon</div>
+                 </Card>
+               ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-8 p-4 bg-blue-50 rounded-2xl border border-blue-100 italic">
+          <p className="text-[10px] font-bold text-[#003A8F] leading-tight text-center">
+            Pilih warna favoritmu untuk membuat pengalaman menggunakan PayRaya lebih personal.
+          </p>
+        </div>
+      </motion.div>
+    );
+  };
 
   const menuGroups = [
     {
@@ -416,3 +509,4 @@ export const ProfileScreen: React.FC = () => {
     </div>
   );
 };
+
