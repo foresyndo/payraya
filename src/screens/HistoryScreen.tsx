@@ -71,10 +71,30 @@ export const HistoryScreen: React.FC = () => {
           </motion.div>
         ))}
         {filteredTransactions.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-20 opacity-40">
-            <HistoryIcon size={64} strokeWidth={1} />
-            <p className="mt-4 font-medium">Tidak ada transaksi ditemukan</p>
-          </div>
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="flex flex-col items-center justify-center py-20 px-10 text-center"
+          >
+            <div className="w-24 h-24 bg-blue-50 rounded-full flex items-center justify-center mb-6 relative">
+               <HistoryIcon size={48} strokeWidth={1} className="text-[#003A8F] opacity-30" />
+               <div className="absolute inset-0 border-2 border-[#003A8F] border-dashed rounded-full animate-[spin_10s_linear_infinite] opacity-10"></div>
+            </div>
+            <h3 className="text-gray-800 font-black text-lg tracking-tight uppercase">Belum Ada Transaksi</h3>
+            <p className="text-gray-500 text-[11px] font-bold uppercase tracking-widest mt-2 leading-relaxed max-w-[220px] opacity-60">
+              {search 
+                ? `Tidak ada hasil untuk "${search}". Coba kata kunci lain.` 
+                : "Sepertinya Anda belum melakukan transaksi apapun hari ini."}
+            </p>
+            {!search && (
+              <button 
+                onClick={() => setScreen('transfer')}
+                className="mt-8 px-8 py-3.5 bg-[#003A8F] text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-xl shadow-blue-100 active:scale-95 transition-all"
+              >
+                Transfer Sekarang
+              </button>
+            )}
+          </motion.div>
         )}
       </div>
       <AnimatePresence>
