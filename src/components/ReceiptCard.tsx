@@ -17,6 +17,19 @@ export const ReceiptCard: React.FC<ReceiptCardProps> = ({ transaction, onClose }
   const [showShareMenu, setShowShareMenu] = useState(false);
   const [isCapturing, setIsCapturing] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [isPrinting, setIsPrinting] = useState(false);
+  const [showThermalPreview, setShowThermalPreview] = useState(false);
+
+  const handleThermalPrint = () => {
+    setIsPrinting(true);
+    // Simulate real communication with printer
+    setTimeout(() => {
+      setIsPrinting(false);
+      setShowThermalPreview(true);
+      // Automatically trigger system print if in appropriate environment
+      // window.print(); 
+    }, 2000);
+  };
 
   const getShareText = () => {
     return `Bukti Transaksi PayRaya\n\nTotal: ${formatRupiah(transaction.amount)}\nKepada: ${transaction.recipientName || transaction.title}\nTanggal: ${formatFullDateTime(transaction.date)}\nStatus: BERHASIL\n\nTransfer aman dan cepat dengan PayRaya!`;
@@ -177,6 +190,31 @@ export const ReceiptCard: React.FC<ReceiptCardProps> = ({ transaction, onClose }
             <Share2 size={18} />
             Bagikan
          </Button>
+         <button 
+           onClick={handleThermalPrint}
+           disabled={isPrinting}
+           className="col-span-2 mt-2 flex flex-col items-center justify-center gap-2 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-gray-400 font-black text-[10px] uppercase tracking-widest hover:bg-gray-100 transition-colors disabled:opacity-100 relative overflow-hidden"
+         >
+            {isPrinting ? (
+              <>
+                <div className="flex items-center gap-2 relative z-10">
+                  <div className="w-3 h-3 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin"></div>
+                  Menghubungkan ke Printer Bluetooth...
+                </div>
+                <motion.div 
+                  initial={{ x: '-100%' }}
+                  animate={{ x: '100%' }}
+                  transition={{ repeat: Infinity, duration: 1.5, ease: "linear" }}
+                  className="absolute bottom-0 left-0 h-1 bg-[#003A8F] w-full"
+                />
+              </>
+            ) : (
+              <div className="flex items-center gap-2">
+                <Printer size={16} />
+                Cetak Struk (Bluetooth Thermal)
+              </div>
+            )}
+         </button>
       </div>
       
       {onClose && (
@@ -184,6 +222,94 @@ export const ReceiptCard: React.FC<ReceiptCardProps> = ({ transaction, onClose }
           Tutup
         </button>
       )}
+
+      {/* Thermal Print Preview */}
+      <AnimatePresence>
+        {showThermalPreview && (
+          <div className="fixed inset-0 z-[120] flex items-center justify-center p-5">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/80 backdrop-blur-md"
+              onClick={() => setShowThermalPreview(false)}
+            />
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              className="bg-white w-full max-w-[300px] rounded-sm shadow-2xl relative z-10 overflow-hidden font-mono text-[10px] text-black"
+            >
+              <div className="p-6 bg-white flex flex-col items-center">
+                <div className="w-full text-center mb-4 border-b border-black border-dashed pb-2">
+                   <h3 className="font-black text-sm uppercase tracking-tighter">PayRaya Wallet</h3>
+                   <p>PT. RAYA DIGITAL INDONESIA</p>
+                   <p>JAKARTA, INDONESIA</p>
+                </div>
+                
+                <div className="w-full flex justify-between mb-1">
+                   <span>TRANSAKSI</span>
+                   <span className="font-bold">BERHASIL</span>
+                </div>
+                <div className="w-full flex justify-between mb-4 pb-2 border-b border-black border-dashed">
+                   <span>TANGGAL</span>
+                   <span>{formatFullDateTime(transaction.date)}</span>
+                </div>
+
+                <div className="w-full mb-4 space-y-1">
+                   <div className="flex justify-between">
+                      <span>TYPE:</span>
+                      <span>{transaction.type.toUpperCase()}</span>
+                   </div>
+                   <div className="flex justify-between">
+                      <span>REF:</span>
+                      <span>{transaction.id.substring(0, 12)}</span>
+                   </div>
+                   {transaction.recipientName && (
+                     <div className="flex justify-between">
+                        <span>TO:</span>
+                        <span className="text-right truncate max-w-[150px]">{transaction.recipientName}</span>
+                     </div>
+                   )}
+                   {transaction.bankName && (
+                     <div className="flex justify-between">
+                        <span>BANK:</span>
+                        <span>{transaction.bankName}</span>
+                     </div>
+                   )}
+                </div>
+
+                <div className="w-full border-t border-black border-dashed pt-2 mt-2 flex flex-col items-center">
+                   <span className="text-[8px] uppercase mb-1">Total Bayar</span>
+                   <span className="text-xl font-black">{formatRupiah(transaction.amount)}</span>
+                </div>
+
+                <div className="mt-6 text-center border-t border-black border-dashed pt-4 w-full">
+                   <p className="font-bold mb-1">TERIMA KASIH</p>
+                   <p className="text-[8px]">SIMPAN STRUK INI SEBAGAI</p>
+                   <p className="text-[8px]">BUKTI PEMBAYARAN SAH</p>
+                </div>
+
+                <div className="mt-8 opacity-20 transform -rotate-12 select-none pointer-events-none">
+                   <Logo size={40} showText={false} />
+                </div>
+              </div>
+              
+              <div className="p-4 bg-gray-50 flex flex-col gap-2 border-t border-gray-100">
+                 <Button size="full" onClick={() => window.print()} className="bg-black text-white hover:bg-gray-800">
+                   Cetak Sekarang
+                 </Button>
+                 <button 
+                   onClick={() => setShowThermalPreview(false)}
+                   className="text-[10px] font-black text-gray-400 uppercase tracking-widest py-2"
+                 >
+                   Tutup
+                 </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Enhanced Share Sheet */}
       <AnimatePresence>
@@ -274,3 +400,4 @@ const DetailRow: React.FC<{ label: string; value: string; isBadge?: boolean; isI
     )}
   </div>
 );
+
