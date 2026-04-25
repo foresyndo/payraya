@@ -4,6 +4,7 @@ import { DUMMY_TRANSACTIONS } from '../constants';
 import { supabase } from '../lib/supabase';
 import { ToastMessage } from '../components/Toast';
 import { PushNotificationInfo } from '../components/PushNotification';
+import { formatRupiah } from '../utils/format';
 
 interface AppContextType {
   user: User | null;
@@ -29,6 +30,10 @@ interface AppContextType {
   biometricLogin: () => Promise<boolean>;
   findUserByPhone: (phone: string) => User | undefined;
   isBiometricAvailable: boolean;
+  themeColor: string;
+  setThemeColor: (color: string) => void;
+  selectedEWallet: string | null;
+  setSelectedEWallet: (wallet: string | null) => void;
   showToast: (toast: Omit<ToastMessage, 'id'>) => void;
   removeToast: (id: string) => void;
   showPush: (notif: Omit<PushNotificationInfo, 'id'>) => void;
@@ -80,8 +85,17 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       }
     ];
   });
-  const [currentScreen, setCurrentScreen] = useState<Screen>('login');
+  const [currentScreen, setCurrentScreen] = useState<Screen>('topup');
   const [isLoading, setIsLoading] = useState(false);
+  const [themeColor, setThemeColor] = useState(() => {
+    return localStorage.getItem('payraya_theme_color') || '#003A8F';
+  });
+  const [selectedEWallet, setSelectedEWallet] = useState<string | null>(null);
+
+  useEffect(() => {
+    document.documentElement.style.setProperty('--primary-color', themeColor);
+    localStorage.setItem('payraya_theme_color', themeColor);
+  }, [themeColor]);
 
   useEffect(() => {
     const savedUser = localStorage.getItem('payraya_user');
@@ -151,10 +165,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
               
               // If it's new (e.g. from another device or incoming transfer)
               // Add to notifications
+              const summary = `${formatRupiah(newTx.amount)} ${newTx.type === 'income' ? 'dari' : 'ke'} ${newTx.bankName || 'PayRaya'}`;
+
               const newNotif: Notification = {
                 id: `n-tx-${newTx.id}`,
                 title: 'Transaksi Berhasil',
-                message: `${newTx.title}: ${newTx.type === 'income' ? 'Masuk' : 'Keluar'}`,
+                message: summary,
                 type: 'transaction',
                 date: new Date().toISOString(),
                 isRead: false
@@ -164,7 +180,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
               
               showPush({
                 title: newTx.type === 'income' ? 'Dana Masuk' : 'Transaksi Berhasil',
-                message: newTx.title,
+                message: summary,
                 type: newTx.type === 'income' ? 'incoming' : 'outgoing',
                 amount: newTx.amount
               });
@@ -383,11 +399,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     setTransactions(prev => [newTransaction, ...prev]);
     
+    const summary = `${formatRupiah(newTransaction.amount)} ${newTransaction.type === 'income' ? 'dari' : 'ke'} ${newTransaction.bankName || 'PayRaya'}`;
+
     // Add to notifications log
     const newNotif: Notification = {
       id: `n-tx-${newTransaction.id}`,
       title: 'Transaksi Berhasil',
-      message: `${newTransaction.title}: ${newTransaction.type === 'income' ? 'Masuk' : 'Keluar'}`,
+      message: summary,
       type: 'transaction',
       date: newTransaction.date,
       isRead: false
@@ -397,7 +415,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     // Show Push Notification
     showPush({
       title: newTransaction.type === 'income' ? 'Dana Masuk' : 'Transaksi Berhasil',
-      message: newTransaction.title,
+      message: summary,
       type: newTransaction.type === 'income' ? 'incoming' : 'outgoing',
       amount: newTransaction.amount
     });
@@ -547,6 +565,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       toggleBiometric,
       biometricLogin,
       isBiometricAvailable,
+      themeColor,
+      setThemeColor,
+      selectedEWallet,
+      setSelectedEWallet,
       showToast,
       removeToast,
       showPush,
